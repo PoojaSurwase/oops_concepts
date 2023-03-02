@@ -1,0 +1,104 @@
+import pandas as pd 
+df = pd.read_csv("test_file.csv")
+def calculate_total_active_time(df,state):
+    state_df=df[df["order.customer.address.state"]==state].copy()
+    state_df["order.order_purchase_date"]=pd.to_datetime(state_df["order.order_purchase_date"])
+    state_df=state_df.sort_values("order.order_purchase_date")
+    state_df["next_purchase_date"]=state_df["order.order_purchase_date"].shift(-1)
+    state_df["total_active_time"]=(state_df["next_purchase_date"]-state_df["order.order_purchase_date"])/pd.Timedelta(days=1)
+    state_df=state_df[state_df["total_active_time"]!=0]
+# CA-2017-115602, CA-2015-124450, CA-2014-128209 --- Exclude   
+# state_df.to_csv("temp_file1.csv", index=False)  
+    return round(state_df["total_active_time"].mean(),2)
+
+# Call the function to avg calculate the total active time for each order placed in a particular state
+total_active_time_df=calculate_total_active_time(df,"texas") 
+print(total_active_time_df)
+
+#California
+ca_orders = df[df['order.customer.address.state'] == 'california']
+num_ca_orders = len(ca_orders['order.order_id'].unique())
+print(num_ca_orders)
+
+
+#Task 2
+import pandas as pd
+
+df = pd.read_csv("test_file.csv")
+# print(df)
+
+class Orders:
+    def __init__(self, order_id, df):
+        self.order_id = order_id
+        self.df = df
+
+    def calculate_total(self):
+        df_1 = self.df[self.df['order.order_id'] == self.order_id]
+        df_2 = df_1[['id', 'sales_amt']]
+        total_amt = 0
+
+        for i, j in df_2.iterrows():
+            total_amt += j['sales_amt']
+        
+        return total_amt
+    
+
+# US-2014-106992 = 65.872
+orders_1 = Orders('US-2014-106992', df)
+print(orders_1.calculate_total())
+
+
+
+#Task 3
+lass Orders:
+    def __init__(self, order_id, df):
+        self.order_id = order_id
+        self.df = df
+
+    def calculate_total(self):
+        df_1 = self.df[self.df['order.order_id'] == self.order_id]
+        df_2 = df_1[['id', 'sales_amt', 'discount']]
+        df_2['final_amt'] = df_2['sales_amt'] - df_2['discount']
+
+        return df_2
+    
+class Discount(Orders):
+    def __init__(self, order_id, df):
+        super().__init__(order_id, df)
+        
+
+    def calculate_final_amt(self):
+        df = Orders.calculate_total(self)
+        total_amt = 0
+
+        for i, j in df.iterrows():
+            total_amt += j['final_amt']
+
+        return total_amt
+      
+
+# CA-2017-100111 = 339.798
+discount_1 = Discount('CA-2017-100111', df)
+print(discount_1.calculate_final_amt())
+
+
+#Task 4
+class Orders:
+    order_no = 0
+
+    def __init__(self, order_id):
+        self.order_id = order_id
+        Orders.order_no += 1
+
+    @classmethod
+    def get_order_no(cls):
+        return Orders.order_no
+    
+    def display(self):
+        return 'order_id = ' + str(self.order_id) 
+
+print(Orders.get_order_no())    
+orders_1 = Orders('CA-2017-100111')
+order_2 = Orders('US-2014-106992')
+print(Orders.get_order_no())    
+
